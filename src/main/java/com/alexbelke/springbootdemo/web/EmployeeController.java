@@ -3,10 +3,12 @@ package com.alexbelke.springbootdemo.web;
 import com.alexbelke.springbootdemo.model.Employee;
 import com.alexbelke.springbootdemo.repository.EmployeeRepository;
 import com.alexbelke.springbootdemo.util.exceptions.EmployeeNotFoundException;
+import org.springframework.hateoas.CollectionModel;
 import org.springframework.hateoas.EntityModel;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.linkTo;
 import static org.springframework.hateoas.server.mvc.WebMvcLinkBuilder.methodOn;
@@ -23,8 +25,13 @@ class EmployeeController {
 	// Aggregate root
 
 	@GetMapping("/employees")
-	List<Employee> all() {
-		return repository.findAll();
+	CollectionModel<EntityModel<Employee>> all() {
+		List<EntityModel<Employee>> employees = repository
+				.findAll()
+				.stream()
+				.map(employee -> new EntityModel<>(employee, linkTo(methodOn(EmployeeController.class).all()).withRel("employees")))
+				.collect(Collectors.toList());
+		return new CollectionModel<>(employees, linkTo(methodOn(EmployeeController.class).all()).withSelfRel());
 	}
 
 	@PostMapping("/employees")
